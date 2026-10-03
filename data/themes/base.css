@@ -1,0 +1,137 @@
+/* Structure shared by every theme; colors live in <theme>/theme.css. */
+
+.glue-apps { font-family: "Adwaita Sans", "Inter", "Noto Sans", sans-serif; font-size: 14px; }
+
+/* navigation */
+.shell-nav.sidebar { min-width: 236px; padding: 0 12px 14px 12px; }
+.shell-nav.rail { min-width: 78px; padding: 6px 6px 14px 6px; }
+.nav-header { min-height: 54px; background: none; box-shadow: none; }
+.brand { margin-left: 4px; }
+.brand-name { font-weight: 800; font-size: 15px; letter-spacing: -0.2px; }
+button.nav-item { background: none; box-shadow: none; border-radius: 10px;
+  padding: 9px 12px; min-height: 0; font-weight: 500; transition: background 120ms; }
+.rail button.nav-item { padding: 10px 2px 8px 2px; border-radius: 8px; margin-bottom: 2px; }
+.rail .nav-label { font-size: 11px; font-weight: 500; }
+.nav-icon { -gtk-icon-size: 18px; }
+.rail .nav-icon { -gtk-icon-size: 20px; }
+.nav-badge { min-width: 16px; min-height: 16px; border-radius: 99px; font-size: 10px;
+  font-weight: 800; padding: 0 5px; }
+.nav-badge.on-icon { margin: -7px -12px 0 0; }
+
+/* header */
+.shell-topbar { min-height: 58px; background: none; box-shadow: none; }
+.shell-search { min-height: 38px; border-radius: 10px; font-size: 14px; }
+.back-button { border-radius: 99px; min-width: 34px; min-height: 34px; }
+
+/* pages */
+.page { padding: 24px 40px 56px 40px; }
+.page-title { font-size: 32px; font-weight: 800; letter-spacing: -0.6px; }
+.page-subtitle { font-size: 15px; }
+.section-header { margin-bottom: 2px; }
+.section-title { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; }
+.section-session { font-size: 15px; font-weight: 600; }
+button.section-link { font-weight: 700; padding: 4px 10px; min-height: 0; }
+
+/* hero */
+.hero { border-radius: 18px; }
+.hero-eyebrow, .hero-title, .hero-blurb, .hero-app-name, .hero-app-summary { color: #ffffff; }
+.hero-text { padding: 30px 34px; }
+.hero-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1.4px; }
+.hero-title { font-size: 34px; font-weight: 800; letter-spacing: -0.8px; }
+.hero-blurb { font-size: 16px; }
+.hero-scrim { background-image: linear-gradient(to top, rgba(0,0,0,0.90) 0%,
+  rgba(0,0,0,0.62) 45%, rgba(0,0,0,0.0) 80%); }
+.hero-carousel .hero-scrim { background-image: linear-gradient(to right, rgba(0,0,0,0.88) 0%,
+  rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.0) 78%); }
+.hero-app-name { font-weight: 800; font-size: 15px; }
+.hero-app-summary { font-size: 13px; }
+.hero-app .app-icon { -gtk-icon-size: 40px; }
+.banner { padding: 40px 40px 40px 8px; }
+.banner-shot { border-radius: 14px; }
+.hero-carousel .hero { border-radius: 10px; }
+
+/* cards */
+.app-card { border-radius: 14px; padding: 14px; transition: background 150ms, box-shadow 150ms; }
+.app-card.tile { padding: 18px; }
+.app-name { font-weight: 700; font-size: 15px; }
+.app-summary { font-size: 13px; }
+.app-meta { font-size: 12px; }
+.app-price { font-size: 13px; font-weight: 700; }
+button.get-button { border-radius: 99px; padding: 4px 16px; min-height: 28px; min-width: 36px;
+  font-weight: 800; font-size: 13px; box-shadow: none; }
+.category-tile { border-radius: 14px; padding: 0 20px; }
+.category-name { font-weight: 700; font-size: 15px; }
+.category-icon { border-radius: 10px; padding: 9px; -gtk-icon-size: 22px; }
+button.chip { border-radius: 99px; padding: 6px 15px; min-height: 0; font-weight: 600; }
+
+/* detail */
+.detail-icon { -gtk-icon-size: 128px; }
+.detail-name { font-size: 36px; font-weight: 800; letter-spacing: -0.8px; }
+.detail-dev { font-weight: 700; font-size: 15px; }
+.detail-summary { font-size: 16px; }
+button.action-button { min-width: 128px; min-height: 40px; font-weight: 800; font-size: 15px;
+  padding: 0 26px; }
+.shot { border-radius: 14px; }
+.detail-description { font-size: 15px; }
+.info-grid { padding: 20px 24px; border-radius: 14px; }
+.info-key { font-size: 12px; font-weight: 700; }
+.info-value { font-weight: 600; margin-bottom: 10px; }
+.action-progress { min-width: 320px; }
+.log { font-size: 12px; padding: 12px; border-radius: 10px; }
+
+/* panels */
+.panel { border-radius: 14px; }
+.panel-row { padding: 15px 22px; min-height: 40px; }
+.row-title { font-weight: 700; }
+.row-subtitle { font-size: 13px; }
+.update-card { padding: 26px 30px; }
+.update-title { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+.empty-state { padding: 64px 0; }
+
+/* settings: theme picker with fixed-color previews */
+.theme-card { padding: 12px; border-radius: 18px; border: 2px solid transparent; }
+.theme-preview { border-radius: 10px; padding: 8px; }
+.pv-nav { min-width: 36px; margin-right: 8px; }
+.pv-dot { min-height: 8px; border-radius: 4px; margin: 3px 4px; }
+.pv-hero { border-radius: 6px; min-height: 64px; }
+.pv-card { min-height: 24px; border-radius: 5px; }
+.preview-glue { background: #f4f5fa; border: 1px solid #e3e5ef; }
+.preview-glue .pv-dot { background: #c9c3f5; }
+.preview-glue .pv-hero { background-image: linear-gradient(135deg, #5b3df5, #ff7ad9); }
+.preview-glue .pv-card { background: #ffffff; border: 1px solid #e3e5ef; }
+.preview-showcase { background: #ffffff; border: 1px solid #e2e1e6; }
+.preview-showcase .pv-nav { background: #f2f1f6; border-radius: 6px; }
+.preview-showcase .pv-dot { background: #0071e3; min-height: 6px; }
+.preview-showcase .pv-hero { background-image: linear-gradient(135deg, #5b2a86, #0071e3); }
+.preview-showcase .pv-card { background: #f2f2f7; }
+.preview-mosaic { background: #202020; }
+.preview-mosaic .pv-dot { background: #4cc2ff; min-height: 6px; margin: 4px 10px; }
+.preview-mosaic .pv-body { background: #2b2b2b; border-radius: 6px 0 0 0; padding: 6px; }
+.preview-mosaic .pv-hero { background-image: linear-gradient(135deg, #1b2838, #4cc2ff); }
+.preview-mosaic .pv-card { background: #3a3a3a; }
+
+/* welcome */
+.welcome-page { padding: 0; }
+.welcome-title { font-size: 38px; font-weight: 800; letter-spacing: -1px; }
+.action-card { padding: 18px 20px; border-radius: 14px; }
+.shortcut-grid { padding: 8px 4px; }
+.shortcut-row { padding: 10px 18px; }
+.shortcut-action { font-size: 14px; }
+.keycap { min-width: 14px; padding: 3px 9px; border-radius: 7px; font-weight: 700;
+  font-size: 12px; font-family: "Adwaita Mono", "JetBrains Mono", monospace; }
+.keycap-plus { font-size: 11px; }
+
+/* install options */
+.source-card { border-radius: 14px; padding: 16px 18px; min-height: 190px; }
+.source-card.missing { opacity: 0.55; }
+.source-tag { border-radius: 99px; padding: 2px 10px; font-size: 11px; font-weight: 800; }
+.source-missing { font-weight: 700; margin-top: 8px; }
+.source-facts { margin-top: 4px; }
+.info-value-small { font-size: 13px; font-weight: 600; }
+.detail-via { font-size: 13px; font-weight: 600; opacity: 0.7; }
+
+/* lists */
+.list-row { padding: 10px 18px; }
+.package-row { padding: 9px 18px; min-height: 0; }
+.package-name { font-family: "Adwaita Mono", "JetBrains Mono", monospace; font-size: 13px; }
+button.remove-button { min-width: 34px; min-height: 34px; }

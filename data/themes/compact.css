@@ -1,0 +1,10 @@
+/* Small windows; loaded last so it wins over theme files. */
+.compact .page { padding: 16px 18px 40px 18px; }
+.compact .shell-nav.sidebar { min-width: 0; padding: 0 8px 12px 8px; }
+.compact .shell-nav.sidebar button.nav-item { padding: 10px; }
+.compact .page-title { font-size: 26px; }
+.compact .hero-title { font-size: 26px; }
+.compact .hero-text { padding: 20px 22px; }
+.compact .banner { padding: 24px 22px; }
+.compact .detail-name { font-size: 28px; }
+.compact .welcome-title { font-size: 28px; }

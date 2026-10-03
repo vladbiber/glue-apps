@@ -1,0 +1,80 @@
+/* Mosaic: dark tiles, a navigation rail and a rounded content layer. */
+
+@define-color accent_bg_color #4cc2ff;
+@define-color accent_fg_color #000000;
+@define-color accent_color #4cc2ff;
+@define-color window_bg_color #202020;
+@define-color window_fg_color #ffffff;
+@define-color view_bg_color #272727;
+@define-color headerbar_bg_color #202020;
+@define-color card_bg_color #2b2b2b;
+@define-color popover_bg_color #2c2c2c;
+@define-color dialog_bg_color #2b2b2b;
+:root { --accent-bg-color: #4cc2ff; --accent-fg-color: #000000; --accent-color: #4cc2ff;
+  --window-bg-color: #202020; --window-fg-color: #ffffff; --view-bg-color: #272727;
+  --headerbar-bg-color: #202020; --card-bg-color: #2b2b2b; --popover-bg-color: #2c2c2c;
+  --dialog-bg-color: #2b2b2b; }
+
+window.glue-apps, .shell-root { background: #202020; color: #ffffff; }
+.shell-topbar.wide { min-height: 48px; padding-left: 6px; }
+.brand-name { font-size: 12px; font-weight: 500; color: #ffffff; }
+.brand image { -gtk-icon-size: 18px; }
+.shell-nav.rail { background: none; }
+.nav-label { color: #cfcfcf; }
+.nav-icon { color: #ffffff; }
+button.nav-item:hover { background: rgba(255,255,255,0.05); }
+button.nav-item:checked { background: rgba(255,255,255,0.08); box-shadow: inset 3px 0 0 #4cc2ff; }
+button.nav-item:checked .nav-label { color: #ffffff; }
+button.nav-item:checked .nav-icon { color: #4cc2ff; }
+.nav-badge { background: #4cc2ff; color: #000000; }
+
+.shell-search { background: rgba(255,255,255,0.06); color: #ffffff; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08); border-bottom-color: rgba(255,255,255,0.35);
+  min-height: 32px; box-shadow: none; }
+.shell-search:focus-within { background: #1c1c1c; border-bottom: 2px solid #4cc2ff; }
+
+.shell-content.layer { background: #272727; border-radius: 8px 0 0 0;
+  border-top: 1px solid rgba(0,0,0,0.35); border-left: 1px solid rgba(0,0,0,0.35); }
+.page { padding: 28px 36px 56px 36px; }
+.page-title { font-size: 28px; font-weight: 700; }
+.section-title { font-size: 20px; font-weight: 700; }
+.page-subtitle, .row-subtitle, .app-summary, .detail-summary { color: #c5c5c5; }
+.app-meta, .info-key { color: #9d9d9d; }
+button.section-link, .detail-dev { color: #4cc2ff; }
+.hero-eyebrow { color: #4cc2ff; }
+.hero-title { font-size: 38px; }
+
+.app-card { border-radius: 8px; background: #2d2d2d; border: 1px solid rgba(255,255,255,0.05); }
+.app-card:hover { background: #333333; }
+.app-price { color: #ffffff; }
+.app-card.tile .app-price { color: #c5c5c5; font-weight: 600; }
+button.get-button { background: #4cc2ff; color: #000000; border-radius: 4px; }
+button.get-button:hover { background: #47b1e8; }
+
+.category-tile { border-radius: 8px; color: #ffffff; }
+.category-tile:hover { box-shadow: inset 0 0 0 999px rgba(255,255,255,0.08); }
+.category-icon { background: rgba(0,0,0,0.18); color: #ffffff; border-radius: 6px; }
+button.chip { background: #2d2d2d; color: #ffffff; border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 4px; }
+button.chip:checked { background: #4cc2ff; color: #000000; }
+
+button.suggested-action { background: #4cc2ff; color: #000000; border-radius: 4px; }
+button.suggested-action:hover { background: #47b1e8; }
+button.action-button, .update-card button.pill { border-radius: 4px; }
+button.pill:not(.suggested-action):not(.destructive-action) { background: #3a3a3a; color: #ffffff; }
+.shot { border-radius: 8px; }
+.panel { background: #2d2d2d; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; }
+.panel.rows > .panel-row:not(:last-child) { border-bottom: 1px solid #1f1f1f; }
+.status-icon, .action-icon { color: #4cc2ff; }
+.log { background: #1c1c1c; color: #c5c5c5; }
+progressbar > trough > progress { background: #4cc2ff; }
+
+.theme-card:hover { background: rgba(255,255,255,0.04); }
+.theme-card.selected { border-color: #4cc2ff; }
+
+.welcome-title { color: #ffffff; }
+.action-card { background: #2d2d2d; border-radius: 8px; }
+.action-card:hover { background: #333333; }
+.keycap { background: #383838; color: #ffffff; border: 1px solid #4a4a4a; border-bottom-width: 3px;
+  border-radius: 4px; }
+.keycap-plus { color: #9d9d9d; }

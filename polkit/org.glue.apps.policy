@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Glue Apps</vendor>
+  <vendor_url>https://github.com/vladbiber/glue-apps</vendor_url>
+  <action id="org.glue.apps.manage">
+    <description>Install, remove or update apps</description>
+    <description xml:lang="ro">Instalează, elimină sau actualizează aplicații</description>
+    <message>Authenticate to change system apps</message>
+    <message xml:lang="ro">Autentifică-te pentru a modifica aplicațiile sistemului</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/glue-apps/pkg.sh</annotate>
+  </action>
+  <action id="org.glue.apps.update">
+    <description>Update the system</description>
+    <description xml:lang="ro">Actualizează sistemul</description>
+    <message>Authenticate to update the system</message>
+    <message xml:lang="ro">Autentifică-te pentru a actualiza sistemul</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/glue-apps/update.sh</annotate>
+  </action>
+</policyconfig>
