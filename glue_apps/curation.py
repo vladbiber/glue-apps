@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from .model import App, AppSource
@@ -178,8 +179,19 @@ SEED_ICONS = {"repo": "utilities-terminal", "aur": "application-x-executable"}
 TERMINAL_APPS = {"claude-code", "openai-codex-bin", "ollama"}
 
 
+def native_twin(name: str, native_installed, aur_installed=frozenset()) -> AppSource | None:
+    """An installed pacman/AUR package that is this app under another source:
+    Spotify from the AUR is "spotify", OBS Studio "obs-studio", Vesktop "vesktop-bin"."""
+    base = "-".join(re.findall(r"[a-z0-9]+", name.casefold()))
+    for package in (base, base.replace("-", ""), base + "-bin", base.replace("-", "") + "-bin"):
+        if package and package in native_installed:
+            return AppSource("aur" if package in aur_installed else "repo", package, "", True)
+    return None
+
+
 def seed_apps(flatpak_installed: set[str] | frozenset[str] = frozenset(),
-              native_installed: set[str] | frozenset[str] = frozenset()) -> list[App]:
+              native_installed: set[str] | frozenset[str] = frozenset(),
+              aur_installed: set[str] | frozenset[str] = frozenset()) -> list[App]:
     """Offline store front. Ids are Flathub ids, or "aur:<pkg>" / "repo:<pkg>"."""
     apps = []
     for ref, name, summary, categories in SEED:
@@ -188,9 +200,11 @@ def seed_apps(flatpak_installed: set[str] | frozenset[str] = frozenset(),
         installed = package in (flatpak_installed if kind == "flatpak" else native_installed)
         icon = FLATHUB_ICON.format(package) if kind == "flatpak" else \
             "utilities-terminal" if package in TERMINAL_APPS else SEED_ICONS[kind]
+        sources = (AppSource(kind, package, "", installed),)
+        if kind == "flatpak" and (twin := native_twin(name, native_installed, aur_installed)):
+            sources += (twin,)
         apps.append(App(app_id=package, name=name, summary=summary, icon=icon,
-                        categories=categories,
-                        sources=(AppSource(kind, package, "", installed),)))
+                        categories=categories, sources=sources))
     return apps
 
 

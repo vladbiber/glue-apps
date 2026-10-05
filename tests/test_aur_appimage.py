@@ -95,3 +95,14 @@ class TestAppImage(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNativeTwin(unittest.TestCase):
+    def test_aur_or_repo_install_marks_the_flathub_card(self):
+        from glue_apps.curation import native_twin, seed_apps
+        self.assertEqual(native_twin("Spotify", {"spotify"}, {"spotify"}).kind, "aur")
+        self.assertEqual(native_twin("OBS Studio", {"obs-studio"}).ref, "obs-studio")
+        self.assertEqual(native_twin("Vesktop", {"vesktop-bin"}).ref, "vesktop-bin")
+        self.assertIsNone(native_twin("Spotify", set()))
+        apps = {a.name: a for a in seed_apps(set(), {"spotify"}, {"spotify"})}
+        self.assertTrue(apps["Spotify"].installed)

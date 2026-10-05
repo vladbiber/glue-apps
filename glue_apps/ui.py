@@ -65,7 +65,8 @@ class AppsWindow(ShellWindow):
         self.index = CatalogIndex(cached_appstream(system_appstream_paths(),
                                                    self.native_installed,
                                                    cache_dir / "appstream.pickle"))
-        self.index.extend(seed_apps(self.flatpak_installed, self.native_installed))
+        self.index.extend(seed_apps(self.flatpak_installed, self.native_installed,
+                                    self.aur_installed))
         self.pending_updates = None
         self.search_serial = 0
         self.rebuild(os.environ.get("GLUE_APPS_START_PAGE", "discover"))
