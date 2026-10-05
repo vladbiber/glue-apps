@@ -10,10 +10,14 @@
 @define-color card_bg_color #ffffff;
 @define-color popover_bg_color #ffffff;
 @define-color dialog_bg_color #ffffff;
+@define-color dialog_fg_color #1b1d2a;
+@define-color popover_fg_color #1b1d2a;
+@define-color card_fg_color #1b1d2a;
 :root { --accent-bg-color: #6d4aff; --accent-fg-color: #ffffff; --accent-color: #5a36f0;
   --window-bg-color: #f4f5fa; --window-fg-color: #1b1d2a; --view-bg-color: #ffffff;
   --headerbar-bg-color: #f4f5fa; --card-bg-color: #ffffff; --popover-bg-color: #ffffff;
-  --dialog-bg-color: #ffffff; }
+  --dialog-bg-color: #ffffff; --dialog-fg-color: #1b1d2a; --popover-fg-color: #1b1d2a;
+  --card-fg-color: #1b1d2a; }
 
 window.glue-apps, .shell-root { background: #f4f5fa; color: #1b1d2a; }
 .shell-nav { background: #f4f5fa; }

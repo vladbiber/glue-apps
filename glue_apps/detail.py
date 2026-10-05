@@ -260,13 +260,13 @@ class DetailView:
                      "data.")
             if not aur.has_systemd():
                 text += " " + _("Some recipes that need systemd will not work on this system.")
-            dialog = Adw.MessageDialog.new(self.win, _("Community app"), text)
+            dialog = Adw.AlertDialog.new(_("Community app"), text)
             dialog.add_response("cancel", _("Cancel"))
             dialog.add_response("continue", _("I understand, continue"))
             dialog.set_response_appearance("continue", Adw.ResponseAppearance.SUGGESTED)
             dialog.connect("response", lambda _d, r: self._aur_confirmed(option)
                            if r == "continue" else None)
-            dialog.present()
+            dialog.present(self.win)
             return
         self._start(option, action)
 

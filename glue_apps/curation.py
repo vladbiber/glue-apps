@@ -92,9 +92,12 @@ SEED = (
     ("io.dbeaver.DBeaverCommunity", "DBeaver", "Database manager", ("Development",)),
     ("com.usebruno.Bruno", "Bruno", "Test HTTP APIs", ("Development",)),
     # AI
-    ("aur:claude-desktop", "Claude", "Anthropic's assistant on the desktop", ("AI", "Office")),
+    ("aur:claude-desktop", "Claude Desktop", "Claude app with chat, Cowork and Claude Code",
+     ("AI", "Office")),
     ("aur:claude-code", "Claude Code", "AI coding agent in the terminal", ("Development", "AI")),
     ("aur:openai-codex-bin", "Codex", "OpenAI's coding agent in the terminal",
+     ("Development", "AI")),
+    ("aur:codex-app-unofficial", "Codex Desktop", "OpenAI's Codex app with a window",
      ("Development", "AI")),
     ("ai.opencode.opencode", "OpenCode", "Open-source AI coding agent", ("Development", "AI")),
     ("aur:cursor-bin", "Cursor", "Code editor built around AI", ("Development", "AI")),
@@ -120,8 +123,8 @@ ESSENTIALS = ("Firefox", "LibreOffice", "VLC", "Vesktop", "Spotify", "OBS Studio
 GAMES = ("Steam", "Sober", "Lutris", "Heroic", "Prism Launcher", "ProtonUp-Qt", "Bottles",
          "itch", "Moonlight", "RetroArch", "PCSX2", "osu!")
 CREATE = ("Kdenlive", "Blender", "Krita", "Inkscape", "Audacity", "GIMP")
-AI_APPS = ("Claude", "Claude Code", "Codex", "Cursor", "OpenCode", "Ollama", "LM Studio",
-           "Jan", "Alpaca", "GPT4All", "Newelle")
+AI_APPS = ("Claude Desktop", "Claude Code", "Codex Desktop", "Codex", "Cursor", "OpenCode",
+           "Ollama", "LM Studio", "Jan", "Alpaca", "GPT4All", "Newelle")
 
 RECOMMENDED = ESSENTIALS + GAMES + CREATE
 

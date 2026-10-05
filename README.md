@@ -24,7 +24,7 @@ same window.
   background; it only looks when you open the app or press *Check again*.
 - **Installed** lists every app with a window, grouped by where it came from.
 - **A curated front page** with around 90 hand-picked apps in nine categories,
-  including an AI section: Claude, Claude Code and Codex (AUR), Ollama
+  including an AI section: Claude Desktop, Claude Code, Codex Desktop and Codex (AUR), Ollama
   (official repositories), LM Studio, Jan, Alpaca, GPT4All and more (Flathub).
 - **Three looks**, switchable live in Settings: *Glue* (light, white cards),
   *Showcase* (light, search in the sidebar, large feature cards) and *Mosaic*

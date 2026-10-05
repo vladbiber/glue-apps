@@ -49,15 +49,15 @@ def confirm(win, path: Path, on_done=None) -> None:
         _message(win, _("Not an AppImage"),
                  _("{name} is not an AppImage file.", name=path.name))
         return
-    dialog = Adw.MessageDialog.new(
-        win, _("Install {name}?", name=path.name),
+    dialog = Adw.AlertDialog.new(
+        _("Install {name}?", name=path.name),
         _("It will be copied to your Applications folder and added to the app menu. "
           "AppImages run with your permissions, so only install ones from sites you trust."))
     dialog.add_response("cancel", _("Cancel"))
     dialog.add_response("install", _("Install"))
     dialog.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
     dialog.connect("response", lambda _d, r: r == "install" and _install(win, path, on_done))
-    dialog.present()
+    dialog.present(win)
 
 
 def _install(win, path: Path, on_done) -> None:
@@ -77,9 +77,9 @@ def _install(win, path: Path, on_done) -> None:
 
 
 def _message(win, title: str, text: str) -> None:
-    dialog = Adw.MessageDialog.new(win, title, text)
+    dialog = Adw.AlertDialog.new(title, text)
     dialog.add_response("ok", _("OK"))
-    dialog.present()
+    dialog.present(win)
 
 
 def accept_drops(win, on_done=None) -> None:

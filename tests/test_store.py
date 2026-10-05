@@ -9,7 +9,7 @@ sys.path.insert(0, str(ROOT))
 
 from glue_apps import i18n
 from glue_apps.catalog import _best_size, plain_text
-from glue_apps.curation import CATEGORIES, GAMES, SEED, category_of, seed_apps, split_by_category
+from glue_apps.curation import AI_APPS, CATEGORIES, GAMES, SEED, category_of, seed_apps, split_by_category
 from glue_apps.installed import launcher_for, parse_flatpak_list, parse_owners
 from glue_apps.model import App, AppSource
 from glue_apps.sources import (aur_option, candidate_names, flatpak_option, human_size,
@@ -121,6 +121,8 @@ class TestCuration(unittest.TestCase):
     def test_requested_apps_are_listed(self):
         ids = {app_id for app_id, *_rest in SEED}
         self.assertIn("aur:claude-desktop", ids)
+        self.assertIn("aur:codex-app-unofficial", ids)
+        self.assertTrue({"Claude Desktop", "Codex Desktop"} <= set(AI_APPS))
         self.assertIn("dev.vencord.Vesktop", ids)
         self.assertIn("org.vinegarhq.Sober", ids)
         self.assertIn("Sober", GAMES)
