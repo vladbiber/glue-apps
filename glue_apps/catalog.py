@@ -108,6 +108,38 @@ def load_appstream(paths: Iterable[Path], installed: Iterable[str] = ()) -> list
     return merge_apps(apps)
 
 
+def cached_appstream(paths: Iterable[Path], installed: Iterable[str], cache: Path,
+                     state: Iterable[Path] = (Path("/var/lib/pacman/local"),)) -> list[App]:
+    """load_appstream() through a pickle keyed on the catalog files and the
+    package database, which only change on install, removal or update."""
+    import pickle
+    paths = list(paths)
+    key = []
+    for path in [*paths, *state]:
+        try:
+            st = path.stat()
+        except OSError:
+            continue
+        key.append((str(path), st.st_mtime_ns, st.st_size))
+    try:
+        with cache.open("rb") as fh:
+            stored_key, apps = pickle.load(fh)
+        if stored_key == key:
+            return apps
+    except Exception:  # noqa: BLE001 - a missing or stale cache is rebuilt
+        pass
+    apps = load_appstream(paths, installed)
+    try:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        tmp = cache.with_suffix(".tmp")
+        with tmp.open("wb") as fh:
+            pickle.dump((key, apps), fh, protocol=pickle.HIGHEST_PROTOCOL)
+        tmp.replace(cache)
+    except OSError:
+        pass
+    return apps
+
+
 def system_appstream_paths() -> list[Path]:
     roots = (Path("/usr/share/swcatalog/xml"), Path("/usr/share/app-info/xmls"))
     return sorted(path for root in roots for pattern in ("*.xml", "*.xml.gz")
@@ -249,6 +281,16 @@ def parse_yay_info(output: str, installed: Iterable[str] = ()) -> App | None:
 class CatalogIndex:
     def __init__(self, apps: Iterable[App] = ()) -> None:
         self._apps = merge_apps(apps)
+        self._keys: list[tuple[App, str, str]] | None = None
+
+    def _search_keys(self) -> list[tuple[App, str, str]]:
+        # lower-cased name and text per app, built once per index change
+        if self._keys is None:
+            self._keys = [(app, app.name.casefold(),
+                           " ".join((app.name, app.summary, app.description,
+                                     " ".join(app.categories))).casefold())
+                          for app in self._apps]
+        return self._keys
 
     @property
     def apps(self) -> tuple[App, ...]:
@@ -256,15 +298,14 @@ class CatalogIndex:
 
     def extend(self, apps: Iterable[App]) -> None:
         self._apps = merge_apps([*self._apps, *apps])
+        self._keys = None
 
     def search(self, query: str, source: str = "all", limit: int = 80) -> list[App]:
         words = [word.casefold() for word in query.split() if word]
         found: list[tuple[int, App]] = []
-        for app in self._apps:
+        for app, name, haystack in self._search_keys():
             if source != "all" and not any(s.kind == source for s in app.sources):
                 continue
-            name = app.name.casefold()
-            haystack = " ".join((name, app.summary, app.description, " ".join(app.categories))).casefold()
             if words and not all(word in haystack for word in words):
                 continue
             score = sum(10 if name.startswith(word) else 2 if word in name else 1 for word in words)

@@ -15,7 +15,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from . import appimage_ui
-from .catalog import CatalogIndex, load_appstream, system_appstream_paths
+from .catalog import CatalogIndex, cached_appstream, system_appstream_paths
 from .config import AppsConfig
 from .curation import CATEGORIES, CREATE, ESSENTIALS, GAMES, seed_apps, split_by_category
 from .detail import DetailView
@@ -24,7 +24,7 @@ from .model import App, AppSource, canonical_key
 from .pages import settings_page
 from .store_pages import InstalledView, UpdatesView
 from .remote import SearchCache, aur_search, flathub_details, flathub_search
-from .shell import ShellWindow
+from .shell import use_adwaita_icons, ShellWindow
 from .updates import check_updates
 from .views import AppsView, discover_page, games_page
 from .widgets import load_image, scrolled_page
@@ -55,12 +55,16 @@ class AppsWindow(ShellWindow):
         cache_dir = Path(GLib.get_user_cache_dir()) / "glue-apps"
         self.cache = SearchCache(cache_dir / "search.json")
         self.image_cache = cache_dir / "images"
-        self.native_installed = _installed(["pacman", "-Qq"])
-        self.aur_installed = _installed(["pacman", "-Qqm"])
-        self.flatpak_installed = _installed(
-            ["flatpak", "list", "--app", "--columns=application"])
-        self.index = CatalogIndex(load_appstream(system_appstream_paths(),
-                                                 self.native_installed))
+        # the three package lists in parallel; the catalog parse is cached
+        native, aur, flatpak = (self.pool.submit(_installed, argv) for argv in (
+            ["pacman", "-Qq"], ["pacman", "-Qqm"],
+            ["flatpak", "list", "--app", "--columns=application"]))
+        self.native_installed = native.result()
+        self.aur_installed = aur.result()
+        self.flatpak_installed = flatpak.result()
+        self.index = CatalogIndex(cached_appstream(system_appstream_paths(),
+                                                   self.native_installed,
+                                                   cache_dir / "appstream.pickle"))
         self.index.extend(seed_apps(self.flatpak_installed, self.native_installed))
         self.pending_updates = None
         self.search_serial = 0
@@ -170,13 +174,23 @@ class AppsWindow(ShellWindow):
         query = entry.get_text().strip()
         if query and self.stack.get_visible_child_name() != "apps":
             self.show_page("apps")
+        # wait for a pause in typing: every run filters the whole catalog
+        # and rebuilds the result cards
+        if getattr(self, "_search_source", 0):
+            GLib.source_remove(self._search_source)
+        self._search_source = GLib.timeout_add(250, self._run_search)
+
+    def _run_search(self) -> bool:
+        self._search_source = 0
+        query = self.search.get_text().strip()
         self.refresh_results()
         if len(query) < 2:
-            return
+            return False
         self.search_serial += 1
         serial, source = self.search_serial, self.apps_view.source_key()
         future = self.pool.submit(self._remote_search, query, source)
         future.add_done_callback(lambda f: GLib.idle_add(self._merge_remote, serial, f))
+        return False
 
     def _remote_search(self, query: str, source: str) -> list[App]:
         apps: list[App] = []
@@ -197,7 +211,7 @@ class AppsWindow(ShellWindow):
         if not getattr(self, "apps_view", None) or not self.apps_view.results:
             return
         query = self.search.get_text().strip()
-        apps = self.index.search(query, self.apps_view.source_key(), limit=400)
+        apps = self.index.search(query, self.apps_view.source_key(), limit=180)
         inside, others = split_by_category(apps, self.apps_view.category)
         if not query:
             featured = [app for app in self.pick(ESSENTIALS + GAMES + CREATE) if app in inside]
@@ -235,6 +249,10 @@ class AppsApplication(Adw.Application):
         window = self.props.active_window or AppsWindow(self, *self.args)
         window.present()
         return window
+
+    def do_startup(self) -> None:
+        Adw.Application.do_startup(self)
+        use_adwaita_icons()
 
     def do_activate(self) -> None:
         self._window()

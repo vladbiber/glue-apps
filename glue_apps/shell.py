@@ -19,6 +19,14 @@ from .widgets import label, scrolled_page
 COMPACT_WIDTH = 900
 
 
+def use_adwaita_icons() -> None:
+    """Our symbolic icons are Adwaita's; a desktop such as KDE may set breeze
+    for every GTK app, and breeze lacks some of them (broken image icons)."""
+    settings = Gtk.Settings.get_default()
+    if settings is not None:
+        settings.props.gtk_icon_theme_name = "Adwaita"
+
+
 class ShellWindow(Adw.ApplicationWindow):
     NAV: tuple[tuple[str, str, str], ...] = ()
     BOTTOM: tuple[str, ...] = ()
