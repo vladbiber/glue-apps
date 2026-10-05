@@ -28,4 +28,18 @@
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/glue-apps/update.sh</annotate>
   </action>
+  <!-- yay/paru run "pkexec pacman" several times per install (dependencies,
+       the package, the explicit mark); keeping the authorization asks once -->
+  <action id="org.glue.apps.pacman">
+    <description>Install packages for an app</description>
+    <description xml:lang="ro">Instalează pachetele unei aplicații</description>
+    <message>Authenticate to install or remove apps</message>
+    <message xml:lang="ro">Autentifică-te pentru a instala sau elimina aplicații</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/pacman</annotate>
+  </action>
 </policyconfig>
