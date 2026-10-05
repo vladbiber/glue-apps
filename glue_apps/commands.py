@@ -46,8 +46,11 @@ def action_plan(kind: str, action: str, ref: str) -> tuple[Command, ...]:
                 Command(("flatpak", "install", "-y", "--user", "flathub", ref),
                         "Installing the app"),
             )
+        # runtimes nothing uses any more (often a GB or more) go with the app
         return (Command(("flatpak", "uninstall", "-y", "--noninteractive", ref),
-                        "Removing the app"),)
+                        "Removing the app"),
+                Command(("flatpak", "uninstall", "--unused", "-y", "--noninteractive"),
+                        "Removing runtimes no app uses"))
     if kind == "aur":
         if action == "open":
             return (Command(("gtk-launch", ref), "Opening the app"),)

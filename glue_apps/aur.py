@@ -19,9 +19,9 @@ def label(which=shutil.which) -> str:
 
 def _no_prompts(name: str) -> tuple[str, ...]:
     if name == "paru":
-        return ("--noconfirm", "--skipreview", "--sudo", "pkexec")
+        return ("--noconfirm", "--skipreview", "--removemake", "--sudo", "pkexec")
     return ("--noconfirm", "--answerclean", "None", "--answerdiff", "None",
-            "--answeredit", "None", "--sudo", "pkexec")
+            "--answeredit", "None", "--removemake", "--sudo", "pkexec")
 
 
 def install_argv(name: str, ref: str) -> tuple[str, ...]:
