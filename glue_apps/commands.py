@@ -61,7 +61,13 @@ def action_plan(kind: str, action: str, ref: str) -> tuple[Command, ...]:
 
 def update_plan(which=shutil.which) -> tuple[Command, ...]:
     """System packages first, then Flatpak and AUR apps when those tools exist."""
-    plan = [Command(("pkexec", "/usr/lib/glue-apps/update.sh"), "Updating the system")]
+    # pacman runs through the same polkit action as the AUR helper's
+    # "pkexec pacman" calls, so one password covers the whole update;
+    # --ask=20 says yes to conflict removals and to skipping packages that
+    # cannot be upgraded (see helpers/update.sh)
+    plan = [Command(("/usr/lib/glue-apps/update-check.sh",), "Checking the drivers"),
+            Command(("pkexec", "pacman", "-Syu", "--noconfirm", "--ask=20"),
+                    "Updating the system")]
     if which("flatpak"):
         plan.append(Command(("flatpak", "update", "-y", "--noninteractive"),
                             "Updating Flatpak apps"))

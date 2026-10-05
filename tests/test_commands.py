@@ -38,7 +38,8 @@ class TestActionPlans(unittest.TestCase):
 
     def test_update_covers_repo_flatpak_and_aur(self):
         plan = update_plan(lambda name: f"/usr/bin/{name}")
-        self.assertEqual([command.argv[0] for command in plan], ["pkexec", "flatpak", "yay"])
+        self.assertEqual([command.argv[0] for command in plan],
+                         ["/usr/lib/glue-apps/update-check.sh", "pkexec", "flatpak", "yay"])
 
 
 if __name__ == "__main__":

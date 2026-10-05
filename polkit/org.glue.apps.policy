@@ -28,6 +28,18 @@
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/glue-apps/update.sh</annotate>
   </action>
+  <action id="org.glue.apps.unlock">
+    <description>Remove a leftover package manager lock</description>
+    <description xml:lang="ro">Elimină un blocaj rămas al managerului de pachete</description>
+    <message>Authenticate to finish an interrupted update</message>
+    <message xml:lang="ro">Autentifică-te pentru a termina un update întrerupt</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/glue-apps/unlock.sh</annotate>
+  </action>
   <!-- yay/paru run "pkexec pacman" several times per install (dependencies,
        the package, the explicit mark); keeping the authorization asks once -->
   <action id="org.glue.apps.pacman">

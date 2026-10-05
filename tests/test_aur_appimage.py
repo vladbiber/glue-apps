@@ -33,10 +33,12 @@ class TestAurHelpers(unittest.TestCase):
 
     def test_update_plan_skips_missing_tools(self):
         plan = update_plan(which_only())
-        self.assertEqual(len(plan), 1)
-        self.assertIn("/usr/lib/glue-apps/update.sh", plan[0].argv)
+        self.assertEqual(len(plan), 2)
+        self.assertEqual(plan[0].argv, ("/usr/lib/glue-apps/update-check.sh",))
+        self.assertEqual(plan[1].argv[:3], ("pkexec", "pacman", "-Syu"))
         full = update_plan(which_only("flatpak", "paru"))
-        self.assertEqual([c.argv[0] for c in full], ["pkexec", "flatpak", "paru"])
+        self.assertEqual([c.argv[0] for c in full],
+                         ["/usr/lib/glue-apps/update-check.sh", "pkexec", "flatpak", "paru"])
 
     def test_install_plan_never_runs_aur_as_root(self):
         argv = action_plan("aur", "install", "vesktop")[0].argv

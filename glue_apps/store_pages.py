@@ -5,6 +5,7 @@ from __future__ import annotations
 from gi.repository import GLib, Gtk
 
 from . import appimage, appimage_ui
+from . import sysupdate
 from .commands import action_plan, run_commands, update_plan
 from .i18n import _
 from .installed import InstalledApp, installed_apps
@@ -155,14 +156,17 @@ class UpdatesView:
 
         def finished(future) -> bool:
             GLib.source_remove(pulse)
-            ok = not future.exception() and future.result() == 0
+            result = None if future.exception() else future.result()
+            ok = bool(result and result.ok)
             self.progress.set_fraction(1 if ok else 0)
-            self.title.set_text(_("Done.") if ok else _("Update failed."))
-            if ok:
-                self.win.check_updates()
+            if result is None:
+                self.title.set_text(_("Update failed."))
+            else:
+                self.title.set_text(_(sysupdate.summary(result)))
+            self.win.check_updates()
             return False
 
-        future = self.win.pool.submit(run_commands, update_plan(),
+        future = self.win.pool.submit(sysupdate.update_all,
                                       lambda text: GLib.idle_add(append, text))
         future.add_done_callback(lambda f: GLib.idle_add(finished, f))
 

@@ -14,9 +14,14 @@ if pacman -Qq 2>/dev/null | grep -q -- '-dkms$'; then
     done
 fi
 
+# --ask inverts the default answer of two questions --noconfirm says no to,
+# which aborted the whole update: 4 = remove a package that conflicts (a
+# split or merge upstream, the answer is always yes) and 16 = skip the
+# packages that cannot be upgraded this time. pacman still stops if a
+# removal would break a dependency.
 if [ "${GLUE_APPS_DRY_RUN:-0}" = 1 ]; then
-    echo 'pacman -Syu --noconfirm'
+    echo 'pacman -Syu --noconfirm --ask=20'
     exit 0
 fi
 
-exec pacman -Syu --noconfirm
+exec pacman -Syu --noconfirm --ask=20

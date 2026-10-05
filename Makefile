@@ -19,6 +19,8 @@ install:
 	install -m644 glue_apps/*.py $(LIBDIR)/glue_apps/
 	install -Dm755 helpers/pkg.sh $(LIBDIR)/pkg.sh
 	install -Dm755 helpers/update.sh $(LIBDIR)/update.sh
+	install -Dm755 helpers/update-check.sh $(LIBDIR)/update-check.sh
+	install -Dm755 helpers/unlock.sh $(LIBDIR)/unlock.sh
 	install -Dm644 polkit/org.glue.apps.policy $(SHAREDIR)/polkit-1/actions/org.glue.apps.policy
 	install -Dm644 data/applications/org.glue.Apps.desktop $(SHAREDIR)/applications/org.glue.Apps.desktop
 	install -Dm644 data/icons/org.glue.Apps.svg $(SHAREDIR)/icons/hicolor/scalable/apps/org.glue.Apps.svg
