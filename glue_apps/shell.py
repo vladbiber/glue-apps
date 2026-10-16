@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Callable
 
@@ -25,6 +26,23 @@ def use_adwaita_icons() -> None:
     settings = Gtk.Settings.get_default()
     if settings is not None:
         settings.props.gtk_icon_theme_name = "Adwaita"
+
+
+# Desktops whose windows get no title bar from the compositor: GTK 4 always
+# draws its own, so ours needs a close button there
+_BARE_WM = ("gluewc", "hyprland", "nvwm")
+
+
+def title_buttons(env=os.environ) -> str | None:
+    """gtk decoration layout for our header bars. gluemac draws a Mac title
+    bar around every window, so none of ours; a bare WM draws nothing, so a
+    close button; a full desktop (KDE, GNOME, ...) keeps its own setting."""
+    session = (env.get("GLUE_SESSION") or env.get("XDG_CURRENT_DESKTOP") or "").lower()
+    if session.startswith("gluemac"):
+        return ":"
+    if session.startswith(_BARE_WM):
+        return ":close"
+    return None
 
 
 class ShellWindow(Adw.ApplicationWindow):
@@ -91,10 +109,12 @@ class ShellWindow(Adw.ApplicationWindow):
         keys = [key for key, _text, _icon in self.NAV] + list(self.EXTRA_PAGES)
         self.show_page(page if page in keys else keys[0])
 
-    def _header(self, *classes: str) -> Adw.HeaderBar:
+    def _header(self, *classes: str, start: bool = False, end: bool = False) -> Adw.HeaderBar:
         header = Adw.HeaderBar(css_classes=["flat", *classes],
-                               decoration_layout=":", show_start_title_buttons=False,
-                               show_end_title_buttons=False)
+                               show_start_title_buttons=start, show_end_title_buttons=end)
+        layout = title_buttons()
+        if layout is not None:
+            header.set_decoration_layout(layout)
         return header
 
     def _nav_button(self, key: str, text: str, icon: str, vertical: bool,
@@ -152,7 +172,7 @@ class ShellWindow(Adw.ApplicationWindow):
         showcase = self.layout["nav"] == "search-sidebar"
         side = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=False,
                        css_classes=["shell-nav", "sidebar"])
-        side_header = self._header("nav-header")
+        side_header = self._header("nav-header", start=True)
         side_header.set_title_widget(Gtk.Box())
         side_header.pack_start(self._brand())
         side.append(side_header)
@@ -162,7 +182,7 @@ class ShellWindow(Adw.ApplicationWindow):
             self.search.set_margin_bottom(10)
             side.append(self.search)
         side.append(self._nav_list(False))
-        header = self.topbar = self._header("shell-topbar")
+        header = self.topbar = self._header("shell-topbar", end=True)
         header.pack_start(self.back)
         if self.SEARCH and not showcase:
             clamp = Adw.Clamp(maximum_size=520, child=self.search, hexpand=True)
@@ -179,7 +199,7 @@ class ShellWindow(Adw.ApplicationWindow):
         return root
 
     def _rail_shell(self) -> Gtk.Widget:
-        header = self.topbar = self._header("shell-topbar", "wide")
+        header = self.topbar = self._header("shell-topbar", "wide", start=True, end=True)
         header.pack_start(self._brand())
         header.pack_start(self.back)
         if self.SEARCH:
