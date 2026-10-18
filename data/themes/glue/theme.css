@@ -40,9 +40,7 @@ button.nav-item:checked .nav-icon { color: #6d4aff; }
 .section-title, .page-title, .detail-name, .update-title { color: #1b1d2a; }
 button.section-link, .detail-dev { color: #5a36f0; }
 
-.banner { background-image: radial-gradient(circle at 92% 0%, alpha(#ff7ad9, 0.55), transparent 50%),
-  radial-gradient(circle at 0% 100%, alpha(#38bdf8, 0.45), transparent 55%),
-  linear-gradient(135deg, #5b3df5, #7c5cff); box-shadow: 0 16px 40px alpha(#5b3df5, 0.28); }
+.banner { background: #5b3df5; box-shadow: 0 16px 40px alpha(#5b3df5, 0.28); }
 .banner .hero-eyebrow { color: rgba(255,255,255,0.85); }
 .banner-shot { box-shadow: 0 18px 40px rgba(20,10,60,0.45); }
 .hero { box-shadow: 0 10px 30px rgba(27,29,42,0.16); }

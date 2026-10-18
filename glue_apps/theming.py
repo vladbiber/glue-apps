@@ -11,11 +11,12 @@ from .curation import CATEGORY_COLORS, FEATURED
 
 
 def _generated_css() -> str:
-    rules = [f".hero-bg-{index} {{ background-image: linear-gradient(135deg, {a}, {b}); }}"
-             for index, (a, b) in enumerate(feature.colors for feature in FEATURED)]
+    # flat colours: Glue draws no gradients
+    rules = [f".hero-bg-{index} {{ background: {a}; }}"
+             for index, (a, _b) in enumerate(feature.colors for feature in FEATURED)]
     rules += [f".theme-mosaic .cat-{index}, .theme-showcase .cat-{index} .category-icon "
-              f"{{ background-image: linear-gradient(135deg, {a}, {b}); }}"
-              for index, (a, b) in enumerate(CATEGORY_COLORS.values())]
+              f"{{ background: {a}; }}"
+              for index, (a, _b) in enumerate(CATEGORY_COLORS.values())]
     return "\n".join(rules)
 
 
