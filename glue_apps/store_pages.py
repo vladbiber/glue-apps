@@ -8,7 +8,7 @@ from . import appimage, appimage_ui
 from . import sysupdate
 from .commands import action_plan, run_commands, update_plan
 from .i18n import _
-from .installed import InstalledApp, installed_apps
+from .installed import InstalledApp, installed_apps, matches
 from .updates import UpdateItem, counts
 from .views import page_heading
 from .widgets import empty_state, label, section_header
@@ -186,8 +186,13 @@ class InstalledView:
         self.widget.append(heading)
         win.on_compact(lambda compact: heading.set_orientation(
             Gtk.Orientation.VERTICAL if compact else Gtk.Orientation.HORIZONTAL))
+        self.filter = Gtk.SearchEntry(placeholder_text=_("Search installed apps"))
+        self.filter.connect("search-changed", lambda _e: self._render())
+        self.widget.append(self.filter)
         self.list = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self.widget.append(self.list)
+        self.apps: list[InstalledApp] = []
+        self.images: list[appimage.AppImage] = []
 
     def load(self) -> None:
         self.loaded = True
@@ -203,8 +208,20 @@ class InstalledView:
             self._show, *(([], []) if f.exception() else f.result())))
 
     def _show(self, apps: list[InstalledApp], images: list[appimage.AppImage]) -> bool:
+        self.apps, self.images = apps, images
+        self._render()
+        return False
+
+    def _render(self) -> None:
         while child := self.list.get_first_child():
             self.list.remove(child)
+        query = self.filter.get_text().strip()
+        apps = [a for a in self.apps if matches(query, a.title, a.ref)]
+        images = [i for i in self.images if matches(query, i.name, i.path.name)]
+        if query and not apps and not images and (self.apps or self.images):
+            self.list.append(empty_state(_("No installed app matches"),
+                                         _("Try another name."), "system-search-symbolic"))
+            return
         if images:
             self.list.append(section_header(f"AppImage  ·  {len(images)}"))
             panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, css_classes=["panel", "rows"])
@@ -215,7 +232,7 @@ class InstalledView:
             self.list.append(empty_state(_("Nothing here yet"),
                                          _("Apps you install will show up here."),
                                          "view-grid-symbolic"))
-            return False
+            return
         for kind in ("repo", "flatpak", "aur"):
             group = [app for app in apps if app.source == kind]
             if not group:
@@ -225,7 +242,6 @@ class InstalledView:
             for app in group:
                 panel.append(self._row(app))
             self.list.append(panel)
-        return False
 
     def _appimage_row(self, image: appimage.AppImage) -> Gtk.Widget:
         open_button = Gtk.Button(label=_("Open"), css_classes=["pill"])

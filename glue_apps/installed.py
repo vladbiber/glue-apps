@@ -76,6 +76,12 @@ def installed_apps(
     return sorted(apps, key=lambda app: app.title.casefold())
 
 
+def matches(query: str, *fields: str) -> bool:
+    """Every word of the query appears in one of the fields (case-insensitive)."""
+    hay = " ".join(f.lower() for f in fields if f)
+    return all(word in hay for word in query.lower().split())
+
+
 def launcher_for(package: str, pacman_ql: str) -> str:
     """Desktop id (file stem) of the first launcher a package ships."""
     for path in pacman_ql.split():

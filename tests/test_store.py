@@ -165,3 +165,15 @@ class TestLanguage(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class InstalledFilterTest(unittest.TestCase):
+    def test_matches_every_word_in_title_or_package(self):
+        from glue_apps.installed import matches
+        self.assertTrue(matches("", "Firefox", "firefox"))
+        self.assertTrue(matches("fire", "Firefox", "firefox"))
+        self.assertTrue(matches("FIREFOX", "Firefox", "firefox"))
+        self.assertTrue(matches("obs stu", "OBS Studio", "obs-studio"))
+        self.assertTrue(matches("com.valve", "Steam", "com.valvesoftware.Steam"))
+        self.assertFalse(matches("steam", "Firefox", "firefox"))
+        self.assertFalse(matches("obs gimp", "OBS Studio", "obs-studio"))
