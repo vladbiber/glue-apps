@@ -12,21 +12,22 @@ from .curation import category_of
 from .i18n import _
 from .model import App, AppSource
 from .remote import aur_details, flathub_details
-from .sources import SourceOption, probe_sources, recommended
+from .sources import (SourceOption, aur_warning, probe_sources, recommended,
+                      safer_alternative)
 from .widgets import grid, label, section_header
 
 SOURCE_INFO = {
-    "repo": ("Pacman", "Official repositories. Updated with the rest of the system.",
+    "repo": ("Official (Pacman)", "Official repositories. Updated with the rest of the system.",
              "package-x-generic-symbolic"),
     "flatpak": ("Flatpak", "From Flathub. Sandboxed and always the newest version.",
                 "application-x-addon-symbolic"),
-    "aur": ("AUR", "Built on your PC from a community recipe.",
+    "aur": ("AUR", "Built on your PC from a community recipe. Not reviewed by anyone.",
             "system-users-symbolic"),
 }
 
 
 def source_name(kind: str) -> str:
-    return aur.label() if kind == "aur" else SOURCE_INFO[kind][0]
+    return aur.label() if kind == "aur" else _(SOURCE_INFO[kind][0])
 
 
 class DetailView:
@@ -254,26 +255,36 @@ class DetailView:
         if not option or self.busy:
             return
         action = "remove" if option.installed else "install"
-        if option.kind == "aur" and action == "install" and not self.win.config.aur_warning_seen:
-            text = _("The AUR contains recipes written by the community. Glue Apps builds "
-                     "them as your user, but check the source if the app handles sensitive "
-                     "data.")
-            if not aur.has_systemd():
-                text += " " + _("Some recipes that need systemd will not work on this system.")
-            dialog = Adw.AlertDialog.new(_("Community app"), text)
-            dialog.add_response("cancel", _("Cancel"))
-            dialog.add_response("continue", _("I understand, continue"))
-            dialog.set_response_appearance("continue", Adw.ResponseAppearance.SUGGESTED)
-            dialog.connect("response", lambda _d, r: self._aur_confirmed(option)
-                           if r == "continue" else None)
-            dialog.present(self.win)
+        if option.kind == "aur" and action == "install":
+            self._confirm_aur(option)
             return
         self._start(option, action)
 
-    def _aur_confirmed(self, option: SourceOption) -> None:
-        self.win.config.aur_warning_seen = True
-        self.win.save_config()
-        self._start(option, "install")
+    def _confirm_aur(self, option: SourceOption) -> None:
+        # asked every time: AUR install scripts run as root
+        alternative = safer_alternative(self.options)
+        dialog = Adw.AlertDialog.new(_("Install from the AUR?"),
+                                     aur_warning(aur.has_systemd(), alternative))
+        dialog.add_response("cancel", _("Cancel"))
+        if alternative is not None:
+            dialog.add_response("alternative", _("Install the Flatpak instead")
+                                if alternative.kind == "flatpak"
+                                else _("Install the official package instead"))
+            dialog.set_response_appearance("alternative", Adw.ResponseAppearance.SUGGESTED)
+            dialog.set_default_response("alternative")
+        else:
+            dialog.set_default_response("cancel")
+        dialog.add_response("trust", _("I trust this package"))
+        dialog.set_response_appearance("trust", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_close_response("cancel")
+
+        def answered(_dialog, response: str) -> None:
+            if response == "trust":
+                self._start(option, "install")
+            elif response == "alternative" and alternative is not None:
+                self._start(alternative, "install")
+        dialog.connect("response", answered)
+        dialog.present(self.win)
 
     def launch(self) -> None:
         option = self.main_option()

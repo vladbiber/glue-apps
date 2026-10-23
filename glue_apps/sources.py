@@ -10,9 +10,12 @@ import urllib.request
 from dataclasses import dataclass, field
 from typing import Callable
 
+from .i18n import _
 from .model import App
 
 KINDS = ("repo", "flatpak", "aur")
+# short source names on cards and detail pages
+BADGES = {"repo": "Official", "flatpak": "Flatpak", "aur": "AUR"}
 AUR_INFO = "https://aur.archlinux.org/rpc/v5/info?"
 FLATHUB_SUMMARY = "https://flathub.org/api/v2/summary/{}"
 FLATHUB_SEARCH = "https://flathub.org/api/v2/search"
@@ -188,3 +191,28 @@ def recommended(options: list[SourceOption]) -> SourceOption | None:
     available = [option for option in options if option.available]
     installed = [option for option in available if option.installed]
     return (installed or available or [None])[0]
+
+
+def badge_kind(app: App) -> str:
+    """The source a click on Get would use, for the card badge ("" when unknown)."""
+    source = app.preferred_source
+    return source.kind if source else ""
+
+
+def safer_alternative(options: list[SourceOption]) -> SourceOption | None:
+    """An available official or Flatpak option to offer instead of the AUR."""
+    return next((o for o in options if o.available and o.kind in ("repo", "flatpak")), None)
+
+
+def aur_warning(systemd: bool, alternative: SourceOption | None = None) -> str:
+    """Text of the confirmation shown before every AUR install."""
+    text = _("AUR packages are written by anyone and nobody reviews them. Their "
+             "install scripts run as root, so a bad one can take over the whole "
+             "system. Only continue if you trust this package and its maintainer.")
+    if alternative is not None and alternative.kind == "flatpak":
+        text += " " + _("This app is also on Flathub, where it runs sandboxed.")
+    elif alternative is not None:
+        text += " " + _("This app is also in the official repositories.")
+    if not systemd:
+        text += " " + _("Some recipes that need systemd will not work on this system.")
+    return text

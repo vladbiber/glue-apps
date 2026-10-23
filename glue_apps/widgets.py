@@ -12,6 +12,7 @@ from .curation import category_of
 from .i18n import _
 from .media import cached_image
 from .model import App
+from .sources import BADGES, badge_kind
 
 
 def label(text: str, *classes: str, wrap: bool = False, lines: int = 0,
@@ -78,6 +79,24 @@ def pill(app: App, on_get: Callable[[App], None]) -> Gtk.Button:
     return button
 
 
+def source_badge(app: App) -> Gtk.Widget | None:
+    """Official / Flatpak / AUR: where Get would install the app from."""
+    kind = badge_kind(app)
+    if not kind:
+        return None
+    return label(_(BADGES[kind]), "source-badge", f"source-{kind}",
+                 xalign=0.5)
+
+
+def _meta_row(app: App) -> Gtk.Widget:
+    row = Gtk.Box(spacing=6)
+    row.append(label(_(category_of(app)), "app-meta", lines=1, chars=9))
+    if badge := source_badge(app):
+        badge.set_valign(Gtk.Align.CENTER)
+        row.append(badge)
+    return row
+
+
 def app_card(app: App, style: str, pool, cache: Path,
              on_open: Callable[[App], None], on_get: Callable[[App], None]) -> Gtk.Widget:
     """A store card: 'row' (icon left, pill right) or 'tile' (vertical)."""
@@ -90,6 +109,10 @@ def app_card(app: App, style: str, pool, cache: Path,
         name.set_margin_top(10)
         card.append(name)
         card.append(label(_(category_of(app)), "app-meta", lines=1))
+        if badge := source_badge(app):
+            badge.set_halign(Gtk.Align.START)
+            badge.set_margin_top(4)
+            card.append(badge)
         spacer = Gtk.Box(vexpand=True)
         card.append(spacer)
         card.append(label(_("Installed") if app.installed else _("Free"), "app-price"))
@@ -102,7 +125,7 @@ def app_card(app: App, style: str, pool, cache: Path,
     # small natural widths let the grid fit three cards per line; extra space is shared
     text.append(label(app.name, "app-name", lines=1, chars=9))
     text.append(label(app.summary or _(category_of(app)), "app-summary", lines=1, chars=9))
-    text.append(label(_(category_of(app)), "app-meta", lines=1, chars=9))
+    text.append(_meta_row(app))
     card.append(text)
     card.append(pill(app, on_get))
     return clickable(card, lambda: on_open(app))

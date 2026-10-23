@@ -32,7 +32,7 @@ class AppsConfig:
     theme: str = "glue"
     autostart: bool = True
     store: bool = True
-    aur_warning_seen: bool = False
+    aur_warning_seen: bool = False  # unused: every AUR install asks; kept for old configs
     language: str = "en"
 
     @classmethod
