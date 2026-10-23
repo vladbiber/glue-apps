@@ -148,27 +148,34 @@ class UpdatesView:
         self.expander.set_expanded(True)
         self.log.get_buffer().set_text("")
         pulse = GLib.timeout_add(120, lambda: self.progress.pulse() or True)
+        shown = [0]
 
-        def append(text: str) -> bool:
+        def changed(job) -> None:
             buffer = self.log.get_buffer()
-            buffer.insert(buffer.get_end_iter(), text)
-            return False
-
-        def finished(future) -> bool:
+            for text in job.log[shown[0]:]:
+                buffer.insert(buffer.get_end_iter(), text)
+            shown[0] = len(job.log)
+            if job.state == "queued" and (running := self.win.jobs.running()):
+                self.title.set_text(_("Waiting for {name} to finish.", name=running.name))
+            elif job.state == "running":
+                self.title.set_text(_("Updating…"))
+            if job.active:
+                return
             GLib.source_remove(pulse)
-            result = None if future.exception() else future.result()
-            ok = bool(result and result.ok)
-            self.progress.set_fraction(1 if ok else 0)
-            if result is None:
-                self.title.set_text(_("Update failed."))
-            else:
-                self.title.set_text(_(sysupdate.summary(result)))
+            result = job.result
+            self.progress.set_fraction(1 if result is not None and result.ok else 0)
+            self.title.set_text(_("Update failed.") if result is None
+                                else _(sysupdate.summary(result)))
+            self.install.set_sensitive(True)
             self.win.check_updates()
-            return False
 
-        future = self.win.pool.submit(sysupdate.update_all,
-                                      lambda text: GLib.idle_add(append, text))
-        future.add_done_callback(lambda f: GLib.idle_add(finished, f))
+        def run(output):
+            result = sysupdate.update_all(output)
+            return (0 if result.ok else 1), result
+
+        job = self.win.jobs.submit("system", "update", _("System update"), "update", run=run)
+        job.listeners.append(changed)
+        changed(job)
 
 
 class InstalledView:
@@ -264,6 +271,8 @@ class InstalledView:
         return _app_row(self.win, app.title, app.icon, subtitle, open_button, remove)
 
     def _remove(self, app: InstalledApp, button: Gtk.Button) -> None:
+        # through the window's queue: never at the same time as an install
         button.set_sensitive(False)
-        future = self.win.pool.submit(run_commands, action_plan(app.source, "remove", app.ref))
-        future.add_done_callback(lambda f: GLib.idle_add(self.load))
+        job = self.win.jobs.submit(app.source, app.ref, app.title, "remove",
+                                   action_plan(app.source, "remove", app.ref))
+        job.listeners.append(lambda j: None if j.active else self.load())

@@ -15,11 +15,14 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from . import appimage_ui
+from .commands import action_plan
 from .catalog import CatalogIndex, cached_appstream, system_appstream_paths
 from .config import AppsConfig
 from .curation import CATEGORIES, CREATE, ESSENTIALS, GAMES, seed_apps, split_by_category
 from .detail import DetailView
 from .i18n import _, set_language
+from .installed import open_installed
+from .jobs import DONE, FAILED, Job, JobQueue
 from .model import App, AppSource, canonical_key
 from .pages import settings_page
 from .store_pages import InstalledView, UpdatesView
@@ -27,7 +30,7 @@ from .remote import SearchCache, aur_search, flathub_details, flathub_search
 from .shell import use_adwaita_icons, ShellWindow
 from .updates import check_updates
 from .views import AppsView, discover_page, games_page
-from .widgets import load_image, scrolled_page
+from .widgets import label, load_image, scrolled_page
 
 
 def _installed(argv: list[str]) -> set[str]:
@@ -69,6 +72,11 @@ class AppsWindow(ShellWindow):
                                     self.aur_installed))
         self.pending_updates = None
         self.search_serial = 0
+        self.detail = None
+        self.jobs = JobQueue(lambda fn: GLib.idle_add(lambda: fn() or False))
+        self.job_apps: dict[Job, App] = {}
+        self.jobs.listeners.append(self._job_changed)
+        self.connect("close-request", self._close_request)
         self.rebuild(os.environ.get("GLUE_APPS_START_PAGE", "discover"))
         if (wanted := os.environ.get("GLUE_APPS_OPEN_APP")) and (found := self.find_app(wanted)):
             self.open_app(found)
@@ -98,6 +106,19 @@ class AppsWindow(ShellWindow):
             self.installed_view.load()
 
     def after_build(self) -> None:
+        content = self.get_content()
+        self.set_content(None)
+        self.toasts = Adw.ToastOverlay(child=content)
+        self.set_content(self.toasts)
+        self.jobs_spinner = Gtk.Spinner()
+        self.jobs_label = label("", "jobs-label")
+        box = Gtk.Box(spacing=8)
+        box.append(self.jobs_spinner)
+        box.append(self.jobs_label)
+        self.jobs_button = Gtk.Button(child=box, visible=False,
+                                      css_classes=["flat", "pill", "jobs-button"])
+        self.jobs_button.connect("clicked", lambda _b: self._open_running())
+        self.topbar.pack_end(self.jobs_button)
         settings = Gtk.Button(icon_name="emblem-system-symbolic", tooltip_text=_("Settings"),
                               css_classes=["flat", "circular", "settings-button"])
         settings.connect("clicked", lambda _b: self.show_page("settings"))
@@ -105,6 +126,89 @@ class AppsWindow(ShellWindow):
         self.refresh_results()
         if self.pending_updates is not None:
             self.set_updates(self.pending_updates)
+        self._show_jobs()
+
+    def start_job(self, app: App, option, action: str) -> Job:
+        job = self.jobs.submit(option.kind, option.ref, app.name, action,
+                               action_plan(option.kind, action, option.ref))
+        self.job_apps.setdefault(job, app)
+        return job
+
+    def _job_changed(self, job: Job) -> None:
+        self._show_jobs()
+        if job.state not in (DONE, FAILED):
+            return
+        app = self.job_apps.pop(job, None)
+        if job.state == DONE and job.kind in ("repo", "flatpak", "aur"):
+            installed = job.action == "install"
+            if app is not None:
+                self.mark_installed(app, AppSource(job.kind, job.ref), installed)
+            else:
+                target = {"repo": self.native_installed, "flatpak": self.flatpak_installed,
+                          "aur": self.aur_installed}[job.kind]
+                (target.add if installed else target.discard)(job.ref)
+        self._toast(job, app)
+
+    def _show_jobs(self) -> None:
+        if not getattr(self, "jobs_button", None):
+            return
+        active = self.jobs.active()
+        running = self.jobs.running() or (active[0] if active else None)
+        self.jobs_button.set_visible(running is not None)
+        self.jobs_spinner.set_spinning(running is not None)
+        if running is None:
+            return
+        text = {"install": _("Installing {name}…", name=running.name),
+                "remove": _("Removing {name}…", name=running.name)}.get(
+                    running.action, _("Updating the system…"))
+        if len(active) > 1:
+            text += f"  +{len(active) - 1}"
+        self.jobs_label.set_text(text)
+
+    def _open_running(self) -> None:
+        job = self.jobs.running() or next(iter(self.jobs.active()), None)
+        if job is not None and (app := self.job_apps.get(job)):
+            self.open_app(self.current(app))
+        elif job is not None and job.kind == "system":
+            self.show_page("updates")
+
+    def _toast(self, job: Job, app: App | None) -> None:
+        ok = job.state == DONE
+        if job.action == "update":
+            title = _("The update is done") if ok else _("The update did not finish")
+        elif job.action == "install":
+            title = (_("{name} is installed", name=job.name) if ok
+                     else _("{name} could not be installed", name=job.name))
+        else:
+            title = (_("{name} was removed", name=job.name) if ok
+                     else _("{name} could not be removed", name=job.name))
+        toast = Adw.Toast(title=title, timeout=6 if ok else 0)
+        if ok and job.action == "install":
+            toast.set_button_label(_("Open"))
+            toast.connect("button-clicked", lambda _t: self.pool.submit(
+                open_installed, job.kind, job.ref))
+        elif not ok and app is not None:
+            toast.set_button_label(_("Details"))
+            toast.connect("button-clicked", lambda _t: self.open_app(self.current(app)))
+        self.toasts.add_toast(toast)
+
+    def _close_request(self, _window) -> bool:
+        active = self.jobs.active()
+        if not active:
+            return False
+        dialog = Adw.AlertDialog.new(
+            {"install": _("{name} is still installing", name=active[0].name),
+             "remove": _("{name} is still being removed", name=active[0].name)}.get(
+                 active[0].action, _("The system is still updating")),
+            _("If you close Glue Apps now it finishes in the background, "
+              "but you will not see when it is done."))
+        dialog.add_response("wait", _("Keep open"))
+        dialog.add_response("close", _("Close"))
+        dialog.set_default_response("wait")
+        dialog.set_close_response("wait")
+        dialog.connect("response", lambda _d, r: r == "close" and self.destroy())
+        dialog.present(self)
+        return True
 
     def show_category(self, name: str) -> None:
         self.apps_view.select_category(name if name in CATEGORIES else "All")
@@ -155,6 +259,9 @@ class AppsWindow(ShellWindow):
                 self.load(picture, detail.screenshots[0])
             return False
         future.add_done_callback(lambda f: GLib.idle_add(loaded, f))
+
+    def current(self, app: App) -> App:
+        return self._lookup(app)
 
     def _lookup(self, app: App) -> App:
         key = canonical_key(app)

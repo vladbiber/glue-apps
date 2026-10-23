@@ -6,8 +6,8 @@ from gi.repository import Adw, GLib, Gtk
 
 from . import aur
 from .catalog import plain_text
-from .commands import action_plan, run_commands
 from .installed import open_installed
+from .jobs import DONE, QUEUED, RUNNING, Job
 from .curation import category_of
 from .i18n import _
 from .model import App, AppSource
@@ -37,6 +37,8 @@ class DetailView:
         self.options: list[SourceOption] = []
         self.busy = False
         self.pulse_id = 0
+        self.job: Job | None = None
+        self.log_len = 0
         self.widget = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=30,
                               css_classes=["detail"])
         self.widget.append(self._header())
@@ -46,6 +48,7 @@ class DetailView:
         self._fill()
         self._fetch_details()
         self._probe()
+        self._attach_existing()
 
     def _header(self) -> Gtk.Widget:
         header = Gtk.Box(spacing=28, css_classes=["detail-header"])
@@ -247,6 +250,10 @@ class DetailView:
             self.action.set_sensitive(False)
             self.via.set_text("")
         self.open.set_visible(bool(best and best.installed))
+        if self.busy and self.job is not None:
+            self.action.set_label(_("Installing…") if self.job.action == "install"
+                                  else _("Removing…"))
+            self.action.set_sensitive(False)
 
     def main_option(self) -> SourceOption | None:
         return recommended(self.options)
@@ -291,42 +298,81 @@ class DetailView:
         if option and option.installed:
             self.win.pool.submit(open_installed, option.kind, option.ref)
 
+    def _attach_existing(self) -> None:
+        # an install started earlier (maybe from another page) keeps showing here
+        for source in self.app.sources:
+            if job := self.win.jobs.latest(source.kind, source.ref):
+                self._follow(job)
+                return
+
     def _start(self, option: SourceOption, action: str) -> None:
-        self.busy = True
-        self._render_options()
-        self.action.set_sensitive(False)
-        self.status.set_text(_("Working…"))
+        self._follow(self.win.start_job(self.app, option, action))
+
+    def _follow(self, job: Job) -> None:
+        self.job = job
+        self.busy = job.active
+        self.log_len = 0
         self.log.get_buffer().set_text("")
         self.log_expander.set_visible(True)
         self.progress.set_visible(True)
-        self.progress.set_text(_("Working…"))
-        self.pulse_id = GLib.timeout_add(120, self._pulse)
-        output = lambda text: GLib.idle_add(self._append, text)
-        future = self.win.pool.submit(
-            run_commands, action_plan(option.kind, action, option.ref), output)
-        future.add_done_callback(lambda f: GLib.idle_add(self._done, f, option, action))
+        if job.active and not self.pulse_id:
+            self.pulse_id = GLib.timeout_add(120, self._pulse)
+        if job.active:
+            job.listeners.append(self._job_changed)
+        self._job_changed(job)
 
     def _pulse(self) -> bool:
         self.progress.pulse()
         return True
 
-    def _append(self, text: str) -> bool:
+    def _job_changed(self, job: Job) -> None:
+        if self.win.detail is not self:
+            if self._job_changed in job.listeners:
+                job.listeners.remove(self._job_changed)
+            self._stop_pulse()
+            return
         buffer = self.log.get_buffer()
-        buffer.insert(buffer.get_end_iter(), text)
-        return False
+        for text in job.log[self.log_len:]:
+            buffer.insert(buffer.get_end_iter(), text)
+        self.log_len = len(job.log)
+        installing = job.action == "install"
+        if job.state == QUEUED:
+            running = self.win.jobs.running()
+            self.progress.set_text(_("Waiting…"))
+            self.status.set_text(_("Waiting for {name} to finish.", name=running.name)
+                                 if running else _("Waiting…"))
+        elif job.state == RUNNING:
+            self.progress.set_text(_("Installing…") if installing else _("Removing…"))
+            self.status.set_text(job.last_line()[:120])
+        else:
+            self._finished(job)
+            return
+        self.action.set_label(_("Installing…") if installing else _("Removing…"))
+        self.action.set_sensitive(False)
+        self._render_options()
 
-    def _done(self, future, option: SourceOption, action: str) -> bool:
-        code = 1 if future.exception() else future.result()
+    def _stop_pulse(self) -> None:
         if self.pulse_id:
             GLib.source_remove(self.pulse_id)
             self.pulse_id = 0
+
+    def _finished(self, job: Job) -> None:
+        if self._job_changed in job.listeners:
+            job.listeners.remove(self._job_changed)
+        self._stop_pulse()
         self.busy = False
-        self.progress.set_fraction(1 if code == 0 else 0)
-        self.progress.set_text(_("Done") if code == 0 else _("Failed"))
-        self.status.set_text(_("Done.") if code == 0 else _("Failed with code {code}.", code=code))
-        if code == 0:
-            option.installed = action == "install"
-            self.app = self.win.mark_installed(
-                self.app, AppSource(option.kind, option.ref, option.version), option.installed)
+        ok = job.state == DONE
+        self.progress.set_fraction(1 if ok else 0)
+        self.progress.set_text(_("Done") if ok else _("Failed"))
+        if ok:
+            self.status.set_text(_("{name} is installed.", name=job.name)
+                                 if job.action == "install"
+                                 else _("{name} was removed.", name=job.name))
+            for option in self.options:
+                if (option.kind, option.ref) == job.key:
+                    option.installed = job.action == "install"
+            self.app = self.win.current(self.app)
+        else:
+            self.status.set_text(_("Failed with code {code}.", code=job.code))
+            self.log_expander.set_expanded(True)
         self._render_options()
-        return False
