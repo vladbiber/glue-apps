@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable, Iterable
 
 from . import aur
@@ -18,12 +19,45 @@ _REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9@._+:-]{0,254}$")
 class Command:
     argv: tuple[str, ...]
     label: str
+    # a failure is logged and the plan goes on, e.g. the NVIDIA GL extension
+    optional: bool = False
 
 
 def _safe(ref: str) -> str:
     if not _REF.fullmatch(ref):
         raise ValueError(f"invalid application reference: {ref!r}")
     return ref
+
+
+NVIDIA_VERSION = Path("/sys/module/nvidia/version")
+FLATPAK_ROOTS = {"--user": Path.home() / ".local/share/flatpak",
+                 "--system": Path("/var/lib/flatpak")}
+GL_BRANCH = "1.4"
+
+
+def gl_extension_plan(scope: str = "--user", version_file: Path | None = None,
+                      root: Path | None = None) -> tuple[Command, ...]:
+    """The NVIDIA GL extensions matching the loaded driver that SCOPE still lacks.
+
+    Same refs as glue-flatpak-gl, which only catches up at boot; this lets a
+    new Flatpak use the GPU the first time it starts.
+    """
+    try:
+        version = (version_file or NVIDIA_VERSION).read_text().strip()
+    except OSError:
+        return ()
+    if not re.fullmatch(r"[0-9]+(\.[0-9]+)*", version):
+        return ()
+    root = root or FLATPAK_ROOTS[scope]
+    plan = []
+    for kind in ("GL", "GL32"):
+        ref = f"org.freedesktop.Platform.{kind}.nvidia-{version.replace('.', '-')}"
+        if any((root / "runtime" / ref).glob(f"*/{GL_BRANCH}")):
+            continue
+        plan.append(Command(("flatpak", "install", "-y", "--noninteractive", scope,
+                             "flathub", f"{ref}//{GL_BRANCH}"),
+                            "Installing the NVIDIA graphics driver for Flatpak", optional=True))
+    return tuple(plan)
 
 
 def action_plan(kind: str, action: str, ref: str) -> tuple[Command, ...]:
@@ -45,6 +79,7 @@ def action_plan(kind: str, action: str, ref: str) -> tuple[Command, ...]:
                         "Preparing Flathub"),
                 Command(("flatpak", "install", "-y", "--user", "flathub", ref),
                         "Installing the app"),
+                *gl_extension_plan("--user"),
             )
         # runtimes nothing uses any more (often a GB or more) go with the app
         return (Command(("flatpak", "uninstall", "-y", "--noninteractive", ref),
@@ -94,12 +129,17 @@ def run_commands(
         except OSError as exc:
             if on_output:
                 on_output(f"Could not start: {exc}\n")
+            if command.optional:
+                continue
             return 127
         assert process.stdout is not None
         for line in process.stdout:
             if on_output:
                 on_output(line)
         code = process.wait()
-        if code:
+        if code and command.optional:
+            if on_output:
+                on_output(f"{command.label} failed (exit {code}), carrying on\n")
+        elif code:
             return code
     return 0
