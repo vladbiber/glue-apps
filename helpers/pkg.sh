@@ -8,9 +8,19 @@ case "$name" in
     ''|*[!A-Za-z0-9@._+:-]*) echo "Invalid name." >&2; exit 2 ;;
 esac
 
+pm=pacman
+if ! command -v pacman >/dev/null && command -v apk >/dev/null; then
+    pm=apk
+fi
+
 if [ "${GLUE_APPS_DRY_RUN:-0}" = 1 ]; then
-    printf 'pacman %s %s\n' "$action" "$name"
+    printf '%s %s %s\n' "$pm" "$action" "$name"
     exit 0
+fi
+
+if [ "$pm" = apk ]; then
+    [ "$action" = install ] && exec apk add "$name"
+    exec apk del "$name"
 fi
 
 if [ "$action" = install ]; then

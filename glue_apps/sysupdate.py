@@ -16,14 +16,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable
 
-from . import aur
+from . import aur, native
 
 Output = Callable[[str], None]
 Runner = Callable[[list[str], Output], tuple[int, str]]
 
-LOCK = Path("/var/lib/pacman/db.lck")
+LOCK = native.LOCK
 CHECK = "/usr/lib/glue-apps/update-check.sh"
 UNLOCK = "/usr/lib/glue-apps/unlock.sh"
+UPDATE = "/usr/lib/glue-apps/update.sh"
 KEYRINGS = ("archlinux-keyring", "artix-keyring", "cachyos-keyring")
 PACMAN = ["pkexec", "pacman"]
 # --ask=20: yes to removing a conflicting package and to skipping packages
@@ -109,6 +110,13 @@ def update_system(output: Output, runner: Runner = stream, lock: Path = LOCK,
     code, text = runner([CHECK], output)
     if code not in (0, 127):
         result.problems.append(text.strip() or "The driver check stopped the update.")
+        return result
+    if native.APK:
+        output("Updating the system…\n")
+        code, _text = runner(["pkexec", UPDATE], output)
+        result.ok = code == 0
+        if not result.ok:
+            result.problems.append("apk stopped the update; the details are in the log above.")
         return result
     if lock.exists() and not running():
         output("Removing a leftover pacman lock…\n")

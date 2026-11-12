@@ -2,6 +2,11 @@
 # Full system upgrade, run through pkexec by Glue Apps.
 set -eu
 
+if ! command -v pacman >/dev/null && command -v apk >/dev/null; then
+    [ "${GLUE_APPS_DRY_RUN:-0}" = 1 ] && { echo 'apk upgrade -U'; exit 0; }
+    exec apk upgrade -U
+fi
+
 # DKMS drivers (NVIDIA and others) rebuild against the headers of every
 # installed kernel; upgrading without them leaves the next boot without a driver.
 if pacman -Qq 2>/dev/null | grep -q -- '-dkms$'; then

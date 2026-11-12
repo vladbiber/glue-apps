@@ -10,6 +10,7 @@ from contextlib import closing
 from pathlib import Path
 from typing import Iterable
 
+from . import native
 from .model import App, AppSource, merge_apps
 
 
@@ -109,7 +110,7 @@ def load_appstream(paths: Iterable[Path], installed: Iterable[str] = ()) -> list
 
 
 def cached_appstream(paths: Iterable[Path], installed: Iterable[str], cache: Path,
-                     state: Iterable[Path] = (Path("/var/lib/pacman/local"),)) -> list[App]:
+                     state: Iterable[Path] = (native.STATE,)) -> list[App]:
     """load_appstream() through a pickle keyed on the catalog files and the
     package database, which only change on install, removal or update."""
     import pickle

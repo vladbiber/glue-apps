@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from . import native
 from .commands import action_plan, run_commands
 from .updates import parse_desktop_entry
 
@@ -29,7 +30,7 @@ def parse_owners(files: list[str], output: str) -> dict[str, str]:
     for line in output.splitlines():
         head, sep, tail = line.partition(" is owned by ")
         if sep and head in files:
-            owners[head] = tail.split()[0]
+            owners[head] = native.split_name(tail.split()[0])[0] if native.APK else tail.split()[0]
     return owners
 
 
@@ -63,7 +64,7 @@ def installed_apps(
             continue
         if entry:
             entries[str(path)] = entry
-    owners = parse_owners(list(entries), call(["pacman", "-Qo", *entries])) if entries else {}
+    owners = parse_owners(list(entries), call(native.owners_argv(list(entries)))) if entries else {}
     apps = [InstalledApp(title, icon, "aur" if owners[path] in foreign else "repo",
                          owners[path], Path(path).stem)
             for path, (title, icon) in entries.items() if path in owners]
@@ -94,8 +95,9 @@ def open_installed(kind: str, ref: str,
                    runner: Callable[..., subprocess.CompletedProcess] = subprocess.run) -> int:
     if kind != "flatpak":
         try:
-            listing = runner(["pacman", "-Qlq", ref], check=False, capture_output=True,
+            listing = runner(native.files_argv([ref]), check=False, capture_output=True,
                              text=True, timeout=10).stdout
+            listing = " ".join(path for _pkg, path in native.parse_files(listing))
         except (OSError, subprocess.TimeoutExpired):
             listing = ""
         ref = launcher_for(ref, listing)

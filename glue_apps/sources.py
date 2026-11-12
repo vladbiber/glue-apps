@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from .i18n import _
+from . import native as native_pm
 from .model import App
 
 KINDS = ("repo", "flatpak", "aur")
@@ -159,12 +160,15 @@ def probe_sources(
     """Check all three sources; network failures leave a source 'not available'."""
     names = candidate_names(app)
     try:
-        done = runner(["pacman", "-Si", *names], check=False, capture_output=True,
+        done = runner(native_pm.info_argv(names), check=False, capture_output=True,
                       text=True, timeout=10)
-        repo = pacman_option(app, parse_pacman_si(done.stdout), native)
+        parse = native_pm.parse_apk_info if native_pm.APK else parse_pacman_si
+        repo = pacman_option(app, parse(done.stdout), native)
     except (OSError, subprocess.TimeoutExpired):
         repo = SourceOption("repo")
     try:
+        if native_pm.APK:
+            raise OSError("no AUR on Alpine")
         query = urllib.parse.urlencode([("arg[]", name) for name in names])
         aur_opt = aur_option(app, parse_aur_info(_get_json(AUR_INFO + query, opener)), aur)
     except (OSError, ValueError, TimeoutError):

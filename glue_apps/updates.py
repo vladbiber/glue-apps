@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Callable
 
 from .aur import helper as aur_helper, pending_argv as aur_pending
+from . import native
 from .system import parse_checkupdates
 
 
@@ -49,8 +50,7 @@ def parse_desktop_entry(text: str) -> tuple[str, str] | None:
 def desktop_files(pacman_ql: str) -> dict[str, list[str]]:
     """`pacman -Ql pkg…` output to {pkg: [/usr/share/applications/*.desktop]}."""
     found: dict[str, list[str]] = {}
-    for line in pacman_ql.splitlines():
-        pkg, _sep, path = line.partition(" ")
+    for pkg, path in native.parse_files(pacman_ql):
         if path.startswith("/usr/share/applications/") and path.endswith(".desktop"):
             found.setdefault(pkg, []).append(path)
     return found
@@ -103,12 +103,13 @@ def check_updates(
         except (OSError, subprocess.TimeoutExpired):
             return ""
 
-    native = parse_checkupdates(call(["checkupdates"]))
+    system = (native.parse_pending if native.APK else parse_checkupdates)(
+        call(native.pending_argv()))
     helper = aur_helper()
     aur = parse_checkupdates(call(aur_pending(helper))) if helper else []
-    names = [name for name, _old, _new in native + aur]
-    launchers = desktop_files(call(["pacman", "-Ql", *names])) if names else {}
-    items = classify(native, "repo", launchers, read) + classify(aur, "aur", launchers, read)
+    names = [name for name, _old, _new in system + aur]
+    launchers = desktop_files(call(native.files_argv(names))) if names else {}
+    items = classify(system, "repo", launchers, read) + classify(aur, "aur", launchers, read)
     columns = "--columns=application,name,version"
     for kind in ("--app", "--runtime"):
         rows = parse_flatpak_remote_updates(call(

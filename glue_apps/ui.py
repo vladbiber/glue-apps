@@ -24,6 +24,7 @@ from .i18n import _, set_language
 from .installed import open_installed
 from .jobs import DONE, FAILED, Job, JobQueue
 from .model import App, AppSource, canonical_key
+from . import native as native_pm
 from .pages import settings_page
 from .store_pages import InstalledView, UpdatesView
 from .remote import SearchCache, aur_search, flathub_details, flathub_search
@@ -60,7 +61,7 @@ class AppsWindow(ShellWindow):
         self.image_cache = cache_dir / "images"
         # the three package lists in parallel; the catalog parse is cached
         native, aur, flatpak = (self.pool.submit(_installed, argv) for argv in (
-            ["pacman", "-Qq"], ["pacman", "-Qqm"],
+            native_pm.installed_argv(), native_pm.foreign_argv(),
             ["flatpak", "list", "--app", "--columns=application"]))
         self.native_installed = native.result()
         self.aur_installed = aur.result()
