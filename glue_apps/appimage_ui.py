@@ -82,15 +82,15 @@ def _message(win, title: str, text: str) -> None:
     dialog.present(win)
 
 
-def accept_drops(win, on_done=None) -> None:
-    """Dropping an .AppImage anywhere on the window starts the install."""
+def accept_drops(win) -> None:
+    """Dropping an .AppImage or .exe anywhere on the window starts the install."""
     target = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
 
     def dropped(_target, value, _x, _y) -> bool:
         files = value.get_files() if value else []
         for file in files[:1]:
             if file.get_path():
-                confirm(win, Path(file.get_path()), on_done)
+                win.install_file(Path(file.get_path()))
                 return True
         return False
     target.connect("drop", dropped)

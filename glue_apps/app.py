@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .config import AppsConfig, THEMES, validate_themes
 
-PAGES = ("discover", "apps", "games", "installed", "updates", "settings")
+PAGES = ("discover", "apps", "games", "windows", "installed", "updates", "settings")
 
 
 def data_root() -> Path:

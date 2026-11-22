@@ -14,7 +14,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
-from . import appimage_ui
+from . import appimage_ui, windows, windows_ui
 from .commands import action_plan
 from .catalog import CatalogIndex, cached_appstream, system_appstream_paths
 from .config import AppsConfig
@@ -46,6 +46,7 @@ class AppsWindow(ShellWindow):
     NAV = (("discover", "Discover", "starred-symbolic"),
            ("apps", "Apps", "view-grid-symbolic"),
            ("games", "Games", "input-gaming-symbolic"),
+           ("windows", "Windows", "application-x-executable-symbolic"),
            ("installed", "Installed", "drive-harddisk-symbolic"),
            ("updates", "Updates", "software-update-available-symbolic"))
     BOTTOM = ("installed", "updates")
@@ -81,12 +82,16 @@ class AppsWindow(ShellWindow):
         self.rebuild(os.environ.get("GLUE_APPS_START_PAGE", "discover"))
         if (wanted := os.environ.get("GLUE_APPS_OPEN_APP")) and (found := self.find_app(wanted)):
             self.open_app(found)
-        appimage_ui.accept_drops(self, self._appimage_added)
+        appimage_ui.accept_drops(self)
         if config.store:
             self.check_updates()
 
     def install_file(self, path: Path) -> None:
-        appimage_ui.confirm(self, path, self._appimage_added)
+        if windows.is_exe(path):
+            self.show_page("windows")
+            windows_ui.confirm(self, path)
+        else:
+            appimage_ui.confirm(self, path, self._appimage_added)
 
     def _appimage_added(self) -> None:
         self.show_page("installed")
@@ -97,8 +102,10 @@ class AppsWindow(ShellWindow):
         self.apps_view = AppsView(self)
         self.updates_view = UpdatesView(self)
         self.installed_view = InstalledView(self)
+        self.windows_view = windows_ui.WindowsView(self)
         return [("discover", discover_page(self)), ("apps", self.apps_view.widget),
-                ("games", games_page(self)), ("installed", self.installed_view.widget),
+                ("games", games_page(self)),
+                ("windows", self.windows_view.widget), ("installed", self.installed_view.widget),
                 ("updates", self.updates_view.widget), ("settings", settings_page(self))]
 
     def show_page(self, key: str, sync_nav: bool = True) -> None:

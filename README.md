@@ -18,6 +18,11 @@ same window.
   window, or double-click it in your file manager. It is copied to
   `~/Applications`, gets an icon and a menu entry, and shows up under
   *Installed* with Open and Uninstall buttons.
+- **Windows programs, made easy.** On the *Windows* page pick an `.exe` (or
+  double-click one in your file manager) and say if it is a game or a program.
+  Programs run with Wine, games with Proton through umu, each kind in one shared
+  prefix. When the installer closes, what it installed lands in the app menu
+  with its own icon. Wine and umu-launcher install with one button.
 - **Updates for the whole system.** One button runs the system upgrade first,
   then Flatpak and AUR updates. The list shows apps with a window first, then
   the packages without one (drivers, libraries, runtimes). Nothing checks in the
