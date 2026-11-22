@@ -282,7 +282,7 @@ def desktop_entry(name: str, mode: str, exe: Path, icon: str, home: Path = Path.
     return "\n".join([
         "[Desktop Entry]", "Type=Application", f"Name={name}", f"Exec={command}",
         f"Path={exe.parent}", f"Icon={icon}", "Terminal=false",
-        f"Categories={'Game;' if mode == 'game' else 'Wine;'}",
+        f"Categories={'Game;' if mode == 'game' else 'Utility;'}",
         f"StartupWMClass={exe.name.lower()}",
         f"X-Glue-Windows-Mode={mode}", f"X-Glue-Windows-Exe={exe}"]) + "\n"
 
